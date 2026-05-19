@@ -107,7 +107,8 @@ async function run() {
     // comment all
     app.post("/comment", async (req, res) => {
       const comment = req.body;
-      const result = commentCollection.insertOne(comment);
+      const result = await commentCollection.insertOne(comment);
+      res.json(result);
     });
 
     // fetch top-level comments
@@ -118,14 +119,17 @@ async function run() {
           ideaId: ideaId,
           parentId: null,
         })
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .toArray();
       res.json(result);
     });
 
     // fetch replies of a comment
     app.get("/comment/:commentId/replies", async (req, res) => {
       const { commentId } = req.params;
-      const replies = await commentCollection.find({ parentId: commentId });
+      const replies =
+        (await commentCollection.find({ parentId: commentId })) / toArray();
+      res.json(replies);
     });
 
     // getting idea details page
