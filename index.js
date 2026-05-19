@@ -6,7 +6,8 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { jwtVerify, createRemoteJWKSet } = require("jose-cjs");
 const uri = process.env.MONGODB_URI;
 const PORT = process.env.PORT || 4000;
 
@@ -23,6 +24,27 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+const JWKS = createRemoteJWKSet(new URL("http://localhost:3000/api/auth/jwks"));
+
+const verifyToken = async (req, res, next) => {
+  const tokenHeader = req?.headers?.authorization;
+  if (!tokenHeader) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const token = tokenHeader?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+    console.log("this is payload:", payload);
+    return next();
+  } catch (error) {
+    res.status(403).json({ message: "Forbidden" });
+  }
+};
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -30,18 +52,19 @@ async function run() {
     const db = client.db("ideaflow");
     const ideaCollection = db.collection("ideas");
     // Send a ping to confirm a successful connection
-
+    // adding idea
     app.post("/idea", async (req, res) => {
       const ideaData = req.body;
       const result = await ideaCollection.insertOne(ideaData);
       res.json(result);
     });
-
+    // getting all ideas
     app.get("/ideas", async (req, res) => {
       const result = await ideaCollection.find().toArray();
       res.json(result);
     });
 
+    // getting trending ideas
     app.get("/ideas/trending", async (req, res) => {
       const result = await ideaCollection
         .find()
@@ -50,6 +73,14 @@ async function run() {
         .toArray();
       res.json(result);
     });
+
+    // getting idea details page
+    app.get("/ideas/:id", verifyToken, async (req, res) => {
+      const { id } = req.params;
+      const result = await ideaCollection.findOne({ _id: new ObjectId(id) });
+      res.json(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
