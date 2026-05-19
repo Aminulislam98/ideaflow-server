@@ -52,38 +52,6 @@ async function run() {
     const db = client.db("ideaflow");
     const ideaCollection = db.collection("ideas");
     // Send a ping to confirm a successful connection
-    // adding idea
-    app.post("/idea", async (req, res) => {
-      const ideaData = req.body;
-      const result = await ideaCollection.insertOne(ideaData);
-      res.json(result);
-    });
-    // getting ideas ny query
-    app.get("/ideas", async (req, res) => {
-      try {
-        const { search, category, sort } = req.query;
-
-        const query = {};
-        if (search) {
-          query.title = { $regex: search, $options: "i" };
-        }
-        if (category && category !== "All Categories") {
-          query.category = category;
-        }
-
-        console.log("category:", category); // ← এটা add করো
-        console.log("query:", query);
-        const sortOrder = sort === "oldest" ? 1 : -1;
-
-        const ideas = await ideaCollection
-          .find(query)
-          .sort({ createdAt: sortOrder })
-          .toArray();
-        res.json(ideas);
-      } catch (err) {
-        res.status(500).json({ message: "Server Error" });
-      }
-    });
 
     // getting trending ideas
     app.get("/ideas/trending", async (req, res) => {
@@ -111,10 +79,43 @@ async function run() {
       }
     });
 
+    // getting ideas ny query
+    app.get("/ideas", async (req, res) => {
+      try {
+        const { search, category, sort } = req.query;
+        console.log("Sort received:", sort); // Let's check this!
+        console.log("category received:", category); // Let's check this!
+
+        const query = {};
+        if (search) {
+          query.title = { $regex: search, $options: "i" };
+        }
+        if (category && category !== "All Categories") {
+          query.category = category;
+        }
+        const sortOrder = sort === "Oldest" ? 1 : -1;
+        console.log(req?.query?.sort);
+        const ideas = await ideaCollection
+          .find(query)
+          .sort({ createdAt: sortOrder })
+          .toArray();
+        res.json(ideas);
+      } catch (err) {
+        res.status(500).json({ message: "Server Error" });
+      }
+    });
+
     // getting idea details page
     app.get("/ideas/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const result = await ideaCollection.findOne({ _id: new ObjectId(id) });
+      res.json(result);
+    });
+
+    // adding idea
+    app.post("/idea", async (req, res) => {
+      const ideaData = req.body;
+      const result = await ideaCollection.insertOne(ideaData);
       res.json(result);
     });
 
