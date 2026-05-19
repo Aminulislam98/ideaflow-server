@@ -81,11 +81,9 @@ async function run() {
 
     // getting ideas ny query
     app.get("/ideas", async (req, res) => {
+      console.log(req.query);
       try {
         const { search, category, sort } = req.query;
-        console.log("Sort received:", sort); // Let's check this!
-        console.log("category received:", category); // Let's check this!
-
         const query = {};
         if (search) {
           query.title = { $regex: search, $options: "i" };
@@ -94,7 +92,6 @@ async function run() {
           query.category = category;
         }
         const sortOrder = sort === "Oldest" ? 1 : -1;
-        console.log(req?.query?.sort);
         const ideas = await ideaCollection
           .find(query)
           .sort({ createdAt: sortOrder })
