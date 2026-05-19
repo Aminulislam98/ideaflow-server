@@ -74,6 +74,21 @@ async function run() {
       res.json(result);
     });
 
+    app.get("/ideas/suggestions", async (req, res) => {
+      try {
+        const { search } = req.query;
+        const suggestions = await ideaCollection
+          .find({
+            title: { $regex: search, $options: "i" },
+          })
+          .project({ title: 1, _id: 1 })
+          .limit(5)
+          .toArray();
+        res.json(suggestions);
+      } catch (err) {
+        res.status(500).json({ message: "Server error" });
+      }
+    });
     // getting idea details page
     app.get("/ideas/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
