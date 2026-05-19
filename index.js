@@ -52,6 +52,8 @@ async function run() {
     const db = client.db("ideaflow");
     const ideaCollection = db.collection("ideas");
     // Send a ping to confirm a successful connection
+    // new data base for comments
+    const commentCollection = db.collection("comments");
 
     // getting trending ideas
     app.get("/ideas/trending", async (req, res) => {
@@ -100,6 +102,30 @@ async function run() {
       } catch (err) {
         res.status(500).json({ message: "Server Error" });
       }
+    });
+
+    // comment all
+    app.post("/comment", async (req, res) => {
+      const comment = req.body;
+      const result = commentCollection.insertOne(comment);
+    });
+
+    // fetch top-level comments
+    app.get("/comment/:ideaId", async (req, res) => {
+      const { ideaId } = req.params;
+      const result = await commentCollection
+        .find({
+          ideaId: ideaId,
+          parentId: null,
+        })
+        .sort({ createdAt: -1 });
+      res.json(result);
+    });
+
+    // fetch replies of a comment
+    app.get("/comment/:commentId/replies", async (req, res) => {
+      const { commentId } = req.params;
+      const replies = await commentCollection.find({ parentId: commentId });
     });
 
     // getting idea details page
