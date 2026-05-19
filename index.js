@@ -58,10 +58,31 @@ async function run() {
       const result = await ideaCollection.insertOne(ideaData);
       res.json(result);
     });
-    // getting all ideas
+    // getting ideas ny query
     app.get("/ideas", async (req, res) => {
-      const result = await ideaCollection.find().toArray();
-      res.json(result);
+      try {
+        const { search, category, sort } = req.query;
+
+        const query = {};
+        if (search) {
+          query.title = { $regex: search, $options: "i" };
+        }
+        if (category && category !== "All Categories") {
+          query.category = category;
+        }
+
+        console.log("category:", category); // ← এটা add করো
+        console.log("query:", query);
+        const sortOrder = sort === "oldest" ? 1 : -1;
+
+        const ideas = await ideaCollection
+          .find(query)
+          .sort({ createdAt: sortOrder })
+          .toArray();
+        res.json(ideas);
+      } catch (err) {
+        res.status(500).json({ message: "Server Error" });
+      }
     });
 
     // getting trending ideas
@@ -89,6 +110,7 @@ async function run() {
         res.status(500).json({ message: "Server error" });
       }
     });
+
     // getting idea details page
     app.get("/ideas/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
