@@ -68,7 +68,7 @@ async function run() {
         const { search } = req.query;
         const suggestions = await ideaCollection
           .find({
-            title: { $regex: search, $options: "i" },
+            title: { $regex: `(^|\\s)${search}`, $options: "i" },
           })
           .project({ title: 1, _id: 1 })
           .limit(5)
