@@ -135,28 +135,25 @@ async function run() {
         const { commentId } = req.params;
         const { userId } = req.body;
 
+        // Step 1 — already liked kina check koro
         const comment = await commentCollection.findOne({
           _id: new ObjectId(commentId),
         });
-
         if (!comment)
           return res.status(404).json({ message: "Comment not found" });
 
         const alreadyLiked = comment.likes?.includes(userId);
 
-        const update = alreadyLiked
-          ? { $pull: { likes: userId }, $inc: { likeCount: -1 } }
-          : { $push: { likes: userId }, $inc: { likeCount: 1 } };
-
-        await commentCollection.updateOne(
+        // Step 2 — like ba unlike koro, ar updated data ekসাথে niye asho
+        const updated = await commentCollection.findOneAndUpdate(
           { _id: new ObjectId(commentId) },
-          update,
+          alreadyLiked
+            ? { $pull: { likes: userId }, $inc: { likeCount: -1 } }
+            : { $push: { likes: userId }, $inc: { likeCount: 1 } },
+          { returnDocument: "after" },
         );
 
-        const updated = await commentCollection.findOne({
-          _id: new ObjectId(commentId),
-        });
-
+        // Step 3 — return koro
         res.json({ likeCount: updated.likeCount, likes: updated.likes });
       } catch (err) {
         res.status(500).json({ message: "Server Error" });
