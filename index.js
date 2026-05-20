@@ -65,10 +65,10 @@ async function run() {
       res.json(result);
     });
     // getting ideas for interactions ;
-    app.get("/ideas/interactions/:userId", async (req, res) => {
-      const { id } = req.params;
-      const result = await ideaCollection.find({ _id: new ObjectId(id) });
-    });
+    // app.get("/ideas/interactions/:userId", verifyToken, async (req, res) => {
+    //   const { id } = req.params;
+    //   const result = await ideaCollection.find({ _id: new ObjectId(id) });
+    // });
 
     app.get("/ideas/suggestions", async (req, res) => {
       try {
@@ -87,7 +87,7 @@ async function run() {
     });
 
     // getting user ideas only
-    app.get("/ideas/user/:userId", async (req, res) => {
+    app.get("/ideas/user/:userId", verifyToken, async (req, res) => {
       const { userId } = req.params;
       const result = await ideaCollection
         .find({ "author.userId": userId })
@@ -95,7 +95,7 @@ async function run() {
       res.json(result);
     });
     // getting user interaction's all ideas
-    app.get("/my-interaction/:userId", async (req, res) => {
+    app.get("/my-interaction/:userId", verifyToken, async (req, res) => {
       try {
         const { userId } = req.params;
         // getting all comment that has comment of the user
@@ -122,7 +122,7 @@ async function run() {
     });
 
     // getting ideas ny query
-    app.get("/ideas", async (req, res) => {
+    app.get("/ideas", verifyToken, async (req, res) => {
       console.log(req.query);
       try {
         const { search, category, sort } = req.query;
@@ -201,7 +201,7 @@ async function run() {
     });
 
     // DELETE — comment delete করো
-    app.delete("/comment/:commentId", async (req, res) => {
+    app.delete("/comment/:commentId", verifyToken, async (req, res) => {
       try {
         const { commentId } = req.params;
         await commentCollection.deleteOne({ _id: new ObjectId(commentId) });
@@ -234,7 +234,7 @@ async function run() {
     });
 
     // updating idea page that is user own
-    app.patch("/idea/:id", async (req, res) => {
+    app.patch("/idea/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const updatedData = req.body;
       const result = await ideaCollection.updateOne(
@@ -251,7 +251,7 @@ async function run() {
       res.json(result);
     });
 
-    app.delete("/idea/:id", async (req, res) => {
+    app.delete("/idea/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const result = await ideaCollection.deleteOne({ _id: new ObjectId(id) });
       res.json(result);
