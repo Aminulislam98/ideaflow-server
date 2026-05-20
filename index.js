@@ -72,13 +72,22 @@ async function run() {
           .find({
             title: { $regex: `(^|\\s)${search}`, $options: "i" },
           })
-          .project({ title: 1, _id: 1 })
+          .project({ title: 1, _id: 1, imageURL: 1 })
           .limit(5)
           .toArray();
         res.json(suggestions);
       } catch (err) {
         res.status(500).json({ message: "Server error" });
       }
+    });
+
+    // getting user ideas only
+    app.get("/ideas/user/:userId", async (req, res) => {
+      const { userId } = req.params;
+      const result = await ideaCollection
+        .find({ "author.userId": userId })
+        .toArray();
+      res.json(result);
     });
 
     // getting ideas ny query
@@ -186,14 +195,6 @@ async function run() {
       }
     });
 
-    // getting user ideas only
-    app.get("/ideas/:userId", async (req, res) => {
-      const { userId } = req.params;
-      const result = await ideaCollection
-        .find({ "author.userId": userId })
-        .toArray();
-      res.json(result);
-    });
     // getting idea details page
     app.get("/ideas/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
