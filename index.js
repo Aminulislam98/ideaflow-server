@@ -64,6 +64,11 @@ async function run() {
         .toArray();
       res.json(result);
     });
+    // getting ideas for interactions ;
+    app.get("/ideas/interactions/:userId", async (req, res) => {
+      const { id } = req.params;
+      const result = await ideaCollection.find({ _id: new ObjectId(id) });
+    });
 
     app.get("/ideas/suggestions", async (req, res) => {
       try {
@@ -88,6 +93,32 @@ async function run() {
         .find({ "author.userId": userId })
         .toArray();
       res.json(result);
+    });
+    // getting user interaction's all ideas
+    app.get("/my-interaction/:userId", async (req, res) => {
+      try {
+        const { userId } = req.params;
+        // getting all comment that has comment of the user
+        const myComments = await commentCollection.find({ author: userId });
+        // just taking the ideas id not all fields
+        const commentedIdeaIds = myComments.map((c) => c.ideaId);
+
+        // getting all ideas where user comment , using $in mean give all idea whose id matches in the idea
+        const commentedIdeas = await ideaCollection.find({
+          _id: { $in: commentedIdeaIds },
+        });
+
+        // getting all ideas post where user liked:
+        const likedIdeas = await ideaCollection.find({ likes: userId });
+
+        res.status(200).json({
+          success: true,
+          commentedIdeaIds,
+          likedIdeas,
+        });
+      } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+      }
     });
 
     // getting ideas ny query
