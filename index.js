@@ -185,6 +185,15 @@ async function run() {
         res.status(500).json({ message: "Server Error" });
       }
     });
+
+    // getting user ideas only
+    app.get("/ideas/:userId", async (req, res) => {
+      const { userId } = req.params;
+      const result = await ideaCollection
+        .find({ "author.userId": userId })
+        .toArray();
+      res.json(result);
+    });
     // getting idea details page
     app.get("/ideas/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
