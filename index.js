@@ -95,25 +95,36 @@ async function run() {
       res.json(result);
     });
     // getting user interaction's all ideas
-    app.get("/my-interaction/:userId", verifyToken, async (req, res) => {
+    app.get("/my-interaction/:userId", async (req, res) => {
       try {
         const { userId } = req.params;
+        console.log("userId from params:", userId);
+
         // getting all comment that has comment of the user
-        const myComments = await commentCollection.find({ author: userId });
+        const myComments = await commentCollection
+          .find({ "author.userId": userId })
+          .toArray();
         // just taking the ideas id not all fields
-        const commentedIdeaIds = myComments.map((c) => c.ideaId);
+
+        console.log("myComments:", myComments);
+
+        const commentedIdeaIds = myComments.map((c) => new ObjectId(c.ideaId));
 
         // getting all ideas where user comment , using $in mean give all idea whose id matches in the idea
-        const commentedIdeas = await ideaCollection.find({
-          _id: { $in: commentedIdeaIds },
-        });
+        const commentedIdeas = await ideaCollection
+          .find({
+            _id: { $in: commentedIdeaIds },
+          })
+          .toArray();
 
         // getting all ideas post where user liked:
-        const likedIdeas = await ideaCollection.find({ likes: userId });
+        const likedIdeas = await ideaCollection
+          .find({ likes: userId })
+          .toArray();
 
         res.status(200).json({
           success: true,
-          commentedIdeaIds,
+          commentedIdeas,
           likedIdeas,
         });
       } catch (error) {
@@ -122,7 +133,7 @@ async function run() {
     });
 
     // getting ideas ny query
-    app.get("/ideas", verifyToken, async (req, res) => {
+    app.get("/ideas", async (req, res) => {
       console.log(req.query);
       try {
         const { search, category, sort } = req.query;
