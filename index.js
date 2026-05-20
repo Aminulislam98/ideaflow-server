@@ -202,10 +202,27 @@ async function run() {
       res.json(result);
     });
 
+    // updating idea page that is user own
+    app.patch("/idea/:id", async (req, res) => {
+      const { id } = req.params;
+      const updatedData = req.body;
+      const result = await ideaCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedData },
+      );
+      res.json(result);
+    });
+
     // adding idea
     app.post("/idea", async (req, res) => {
       const ideaData = req.body;
       const result = await ideaCollection.insertOne(ideaData);
+      res.json(result);
+    });
+
+    app.delete("/idea/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await ideaCollection.deleteOne({ _id: new ObjectId(id) });
       res.json(result);
     });
 
