@@ -104,34 +104,90 @@ async function run() {
       }
     });
 
-    // comment all
+    // POST — comment করো
     app.post("/comment", async (req, res) => {
-      const comment = req.body;
-      const result = await commentCollection.insertOne(comment);
-      res.json(result);
+      try {
+        const commentData = req.body;
+        const result = await commentCollection.insertOne(commentData);
+        res.status(201).json({ ...commentData, _id: result.insertedId });
+      } catch (err) {
+        res.status(500).json({ message: "Server Error" });
+      }
     });
 
-    // fetch top-level comments
+    // GET — idea-র সব comments আনো
     app.get("/comment/:ideaId", async (req, res) => {
-      const { ideaId } = req.params;
-      const result = await commentCollection
-        .find({
-          ideaId: ideaId,
-          parentId: null,
-        })
-        .sort({ createdAt: -1 })
-        .toArray();
-      res.json(result);
+      try {
+        const { ideaId } = req.params;
+        const comments = await commentCollection
+          .find({ ideaId, parentId: null })
+          .sort({ createdAt: -1 })
+          .toArray();
+        res.json(comments);
+      } catch (err) {
+        res.status(500).json({ message: "Server Error" });
+      }
     });
 
-    // fetch replies of a comment
-    app.get("/comment/:commentId/replies", async (req, res) => {
-      const { commentId } = req.params;
-      const replies =
-        (await commentCollection.find({ parentId: commentId })) / toArray();
-      res.json(replies);
+    // PATCH — like toggle
+    app.patch("/comment/:commentId/like", async (req, res) => {
+      try {
+        const { commentId } = req.params;
+        const { userId } = req.body;
+
+        const comment = await commentCollection.findOne({
+          _id: new ObjectId(commentId),
+        });
+
+        if (!comment)
+          return res.status(404).json({ message: "Comment not found" });
+
+        const alreadyLiked = comment.likes?.includes(userId);
+
+        const update = alreadyLiked
+          ? { $pull: { likes: userId }, $inc: { likeCount: -1 } }
+          : { $push: { likes: userId }, $inc: { likeCount: 1 } };
+
+        await commentCollection.updateOne(
+          { _id: new ObjectId(commentId) },
+          update,
+        );
+
+        const updated = await commentCollection.findOne({
+          _id: new ObjectId(commentId),
+        });
+
+        res.json({ likeCount: updated.likeCount, likes: updated.likes });
+      } catch (err) {
+        res.status(500).json({ message: "Server Error" });
+      }
     });
 
+    // DELETE — comment delete করো
+    app.delete("/comment/:commentId", async (req, res) => {
+      try {
+        const { commentId } = req.params;
+        await commentCollection.deleteOne({ _id: new ObjectId(commentId) });
+        res.json({ message: "Comment deleted" });
+      } catch (err) {
+        res.status(500).json({ message: "Server Error" });
+      }
+    });
+
+    // PATCH — comment edit করো
+    app.patch("/comment/:commentId", async (req, res) => {
+      try {
+        const { commentId } = req.params;
+        const { text } = req.body;
+        await commentCollection.updateOne(
+          { _id: new ObjectId(commentId) },
+          { $set: { text } },
+        );
+        res.json({ message: "Comment updated" });
+      } catch (err) {
+        res.status(500).json({ message: "Server Error" });
+      }
+    });
     // getting idea details page
     app.get("/ideas/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
