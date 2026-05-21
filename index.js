@@ -97,34 +97,47 @@ async function run() {
         .toArray();
       res.json(result);
     });
-    // getting user interaction's all ideas
     app.get("/my-interaction/:userId", async (req, res) => {
       try {
         const { userId } = req.params;
         console.log("userId from params:", userId);
 
-        // getting all comment that has comment of the user
+        // 1. Get all comments made by this user
         const myComments = await commentCollection
           .find({ "author.userId": userId })
           .toArray();
-        // just taking the ideas id not all fields
 
         console.log("myComments:", myComments);
 
+        // 2. Map through to grab ObjectIds for the query
         const commentedIdeaIds = myComments.map((c) => new ObjectId(c.ideaId));
 
-        // getting all ideas where user comment , using $in mean give all idea whose id matches in the idea
-        const commentedIdeas = await ideaCollection
+        // 3. Get all matched ideas
+        const rawCommentedIdeas = await ideaCollection
           .find({
             _id: { $in: commentedIdeaIds },
           })
           .toArray();
 
-        // getting all ideas post where user liked:
+        // 4. Attach the specific comment string to its corresponding idea object
+        const commentedIdeas = rawCommentedIdeas.map((idea) => {
+          // Find the user's comment text for this specific idea
+          const associatedComment = myComments.find(
+            (c) => c.ideaId === idea._id.toString(),
+          );
+
+          return {
+            ...idea,
+            myComment: associatedComment ? associatedComment.text : "—", // Populating the specific text
+          };
+        });
+
+        // 5. Get all ideas where the user liked
         const likedIdeas = await ideaCollection
           .find({ likes: userId })
           .toArray();
 
+        // 6. Send the structured response back
         res.status(200).json({
           success: true,
           commentedIdeas,
