@@ -131,6 +131,35 @@ async function run() {
         res.status(500).json({ success: false, message: error.message });
       }
     });
+    // PATCH — idea like toggle
+    app.patch("/idea/:ideaId/like", async (req, res) => {
+      try {
+        const { ideaId } = req.params;
+        const { userId } = req.body;
+
+        const idea = await ideaCollection.findOne({
+          _id: new ObjectId(ideaId),
+        });
+        if (!idea) return res.status(404).json({ message: "Idea not found" });
+
+        const alreadyLiked = idea.likes?.includes(userId);
+
+        const updated = await ideaCollection.findOneAndUpdate(
+          { _id: new ObjectId(ideaId) },
+          alreadyLiked
+            ? { $pull: { likes: userId }, $inc: { likeCount: -1 } }
+            : { $addToSet: { likes: userId }, $inc: { likeCount: 1 } },
+          { returnDocument: "after" },
+        );
+
+        res.json({
+          liked: !alreadyLiked,
+          likeCount: updated.likeCount,
+        });
+      } catch (err) {
+        res.status(500).json({ message: "Server Error" });
+      }
+    });
 
     // getting ideas ny query
     app.get("/ideas", async (req, res) => {
