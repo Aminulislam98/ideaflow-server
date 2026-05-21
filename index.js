@@ -257,7 +257,7 @@ async function run() {
     });
 
     // DELETE — comment delete করো
-    app.delete("/comment/:commentId", verifyToken, async (req, res) => {
+    app.delete("/comment/:commentId", async (req, res) => {
       try {
         const { commentId } = req.params;
         await commentCollection.deleteOne({ _id: new ObjectId(commentId) });
