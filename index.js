@@ -31,7 +31,7 @@ const JWKS = createRemoteJWKSet(
 
 const verifyToken = async (req, res, next) => {
   const tokenHeader = req?.headers?.authorization;
-  console.log("AUTH HEADER:", tokenHeader?.substring(0, 30)); // first 30 chars
+
   if (!tokenHeader) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -42,10 +42,9 @@ const verifyToken = async (req, res, next) => {
   }
   try {
     const { payload } = await jwtVerify(token, JWKS);
-    console.log("this is payload:", payload);
+
     return next();
   } catch (error) {
-    console.log("JWT ERROR:", error.message); // ← this will tell us exactly why
     res.status(403).json({ message: "Forbidden" });
   }
 };
